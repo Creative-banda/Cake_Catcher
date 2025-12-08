@@ -99,15 +99,21 @@ def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, 
     table_start_y = int(290 * scale)
     row_height = int(50 * scale)
     
-    # Column headers
+    # Column headers - yellow with purple outline
     header_y = table_start_y
     header_text = "#    NAME                      SCORE"
     header_x = utils.SCREEN_WIDTH // 2 - font_small.size(header_text)[0] // 2
     
-    # Draw header with slight tint
-    header_surf = font_small.render(header_text, True, (200, 200, 200))
-    header_surf.set_alpha(180)
-    screen.blit(header_surf, (header_x, header_y))
+    # Draw header with birthday theme colors
+    draw_text_with_effects(
+        screen, header_text, font_small,
+        (header_x, header_y),
+        (255, 217, 61),  # #FFD93D bright yellow
+        stroke_color=(75, 0, 130),  # #4B0082 purple
+        stroke_width=int(4 * scale),
+        shadow_offset=int(2 * scale),
+        shadow_alpha=90
+    )
     
     # Horizontal line below header
     line_y = header_y + int(35 * scale)
@@ -117,8 +123,6 @@ def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, 
     
     # Leaderboard entries - 3 column table
     leaderboard = load_leaderboard()
-    score_color = (255, 255, 255)
-    score_stroke = (0, 51, 102)
     
     # Define column positions
     rank_x = utils.SCREEN_WIDTH // 2 - int(250 * scale)
@@ -130,48 +134,66 @@ def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, 
     for i, entry in enumerate(leaderboard):
         y_pos = entry_start_y + i * row_height
         
-        # Rank number
+        # Special colors for top 3
+        if i == 0:  # 1st place - gold
+            rank_color = (255, 215, 0)
+            name_color = (255, 235, 150)
+            score_color_custom = (255, 223, 100)
+        elif i == 1:  # 2nd place - silver
+            rank_color = (192, 192, 192)
+            name_color = (230, 230, 230)
+            score_color_custom = (180, 220, 255)
+        elif i == 2:  # 3rd place - bronze
+            rank_color = (205, 127, 50)
+            name_color = (255, 240, 220)
+            score_color_custom = (150, 200, 220)
+        else:  # 4th and 5th - standard colors
+            rank_color = (255, 79, 163)  # #FF4FA3 pink
+            name_color = (255, 255, 255)  # white
+            score_color_custom = (108, 231, 255)  # #6CE7FF cyan
+        
+        # Rank number - pink with black outline (or special color)
         rank_text = f"{i+1}."
         draw_text_with_effects(
             screen, rank_text, font_small,
             (rank_x, y_pos),
-            score_color,
-            stroke_color=score_stroke,
-            stroke_width=int(2 * scale),
+            rank_color,
+            stroke_color=(0, 0, 0),
+            stroke_width=int(3 * scale),
             shadow_offset=int(2 * scale),
             shadow_alpha=64
         )
         
-        # Player name
+        # Player name - white with navy outline (or special color)
         name_text = entry['name'][:15]
         draw_text_with_effects(
             screen, name_text, font_small,
             (name_x, y_pos),
-            score_color,
-            stroke_color=score_stroke,
-            stroke_width=int(2 * scale),
+            name_color,
+            stroke_color=(0, 51, 102),  # #003366 navy blue
+            stroke_width=int(3 * scale),
             shadow_offset=int(2 * scale),
             shadow_alpha=64
         )
         
-        # Score (right-aligned)
+        # Score - cyan with dark teal outline (or special color)
         score_text = str(entry['score'])
         score_width = font_small.size(score_text)[0]
         draw_text_with_effects(
             screen, score_text, font_small,
             (score_x - score_width, y_pos),
-            score_color,
-            stroke_color=score_stroke,
-            stroke_width=int(2 * scale),
+            score_color_custom,
+            stroke_color=(0, 91, 99),  # #005B63 dark teal
+            stroke_width=int(3 * scale),
             shadow_offset=int(2 * scale),
             shadow_alpha=64
         )
     
     # Horizontal line below table
-    table_end_y = entry_start_y + len(leaderboard) * row_height + int(10 * scale)
+    table_end_y = entry_start_y + len(leaderboard) * row_height + int(25 * scale)
     pygame.draw.line(screen, (100, 100, 100), (line_start_x, table_end_y), (line_end_x, table_end_y), 2)
     
-    # Last player info below table (smaller, subtle)
+    # Last player info below table - light yellow with gray outline
     saved_name = get_last_player_name()
     if saved_name:
         try:
@@ -181,10 +203,25 @@ def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, 
         
         last_player_y = table_end_y + int(30 * scale)
         hint_text = f"Last Player: {saved_name}  |  Press N to change"
-        hint_surf = small_font.render(hint_text, True, (150, 150, 150))
-        hint_surf.set_alpha(200)
-        hint_rect = hint_surf.get_rect(center=(utils.SCREEN_WIDTH // 2, last_player_y))
-        screen.blit(hint_surf, hint_rect)
+        
+        # Draw with styled text
+        hint_x = utils.SCREEN_WIDTH // 2 - small_font.size(hint_text)[0] // 2
+        
+        # Shadow
+        shadow_surf = small_font.render(hint_text, True, (0, 0, 0))
+        shadow_surf.set_alpha(90)
+        screen.blit(shadow_surf, (hint_x + 1, last_player_y + 1))
+        
+        # Outline
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                if dx*dx + dy*dy <= 4:
+                    outline = small_font.render(hint_text, True, (68, 68, 68))  # #444444
+                    screen.blit(outline, (hint_x + dx, last_player_y + dy))
+        
+        # Main text
+        hint_surf = small_font.render(hint_text, True, (255, 226, 138))  # #FFE28A light yellow
+        screen.blit(hint_surf, (hint_x, last_player_y))
     
     # Instructions - blinking
     if blink_timer % 60 < 40:
