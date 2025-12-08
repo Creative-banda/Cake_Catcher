@@ -129,7 +129,7 @@ def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, 
     name_x = rank_x + int(40 * scale)
     score_x = utils.SCREEN_WIDTH // 2 + int(250 * scale)  # Right-aligned
     
-    entry_start_y = line_y + int(15 * scale)
+    entry_start_y = line_y + int(30 * scale)  # Increased spacing from header line
     
     for i, entry in enumerate(leaderboard):
         y_pos = entry_start_y + i * row_height
@@ -189,8 +189,8 @@ def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, 
             shadow_alpha=64
         )
     
-    # Horizontal line below table
-    table_end_y = entry_start_y + len(leaderboard) * row_height + int(25 * scale)
+    # Horizontal line below table (with extra spacing for text clearance)
+    table_end_y = entry_start_y + len(leaderboard) * row_height + int(45 * scale)
     pygame.draw.line(screen, (100, 100, 100), (line_start_x, table_end_y), (line_end_x, table_end_y), 2)
     
     # Last player info below table - light yellow with gray outline
