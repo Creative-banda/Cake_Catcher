@@ -7,6 +7,7 @@ from game.player import Player
 from game.game_manager import GameManager
 from game.sound_manager import SoundManager
 from game.menu_animations import MenuAnimations
+from game.end_screen import EndScreen
 from game import utils
 from game.utils import (
     FPS, BLACK, WHITE, GREEN, GOLD, 
@@ -453,8 +454,10 @@ def main():
     
     try:
         font_path = 'assets/fonts/Quantum Profit.ttf'
+        # Test if the font can be loaded
+        test_font = pygame.font.Font(font_path, 24)
         utils.CUSTOM_FONT = font_path
-    except:
+    except Exception as e:
         utils.CUSTOM_FONT = None
     
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN | pygame.NOFRAME)
@@ -496,6 +499,11 @@ def main():
     game_state = GameState.START_MENU
     show_webcam = True
     blink_timer = 0
+    
+    # End screen
+    end_screen = None
+    game_over_delay_timer = 0
+    game_over_delay_duration = 1.0  # 1 second delay before showing end screen
     
     # Start menu music
     sound_manager.play_music('main_menu_background_music.mp3', loops=-1, volume=0.25)
@@ -564,11 +572,33 @@ def main():
                 
                 # Game over
                 elif game_state == GameState.GAME_OVER:
-                    if event.key == pygame.K_r:
-                        # Return to menu, restart menu music
-                        sound_manager.stop_music()
-                        sound_manager.play_music('main_menu_background_music.mp3', loops=-1, volume=0.25)
-                        game_state = GameState.START_MENU
+                    if end_screen:
+                        # Handle end screen input
+                        keys_pressed = {event.key: True}
+                        action = end_screen.handle_input(keys_pressed)
+                        
+                        if action == "play_again":
+                            # Start new game with same player
+                            sound_manager.play('menu_press')
+                            welcome_text = random.choice(welcome_messages).replace("{NAME}", player_name)
+                            countdown_start_time = pygame.time.get_ticks()
+                            game_state = GameState.COUNTDOWN
+                            end_screen = None
+                        elif action == "change_name":
+                            # Go to name entry
+                            sound_manager.play('menu_press')
+                            sound_manager.stop_music()
+                            sound_manager.play_music('main_menu_background_music.mp3', loops=-1, volume=0.25)
+                            game_state = GameState.NAME_ENTRY
+                            name_input = ""
+                            end_screen = None
+                        elif action == "main_menu":
+                            # Return to menu
+                            sound_manager.play('menu_press')
+                            sound_manager.stop_music()
+                            sound_manager.play_music('main_menu_background_music.mp3', loops=-1, volume=0.25)
+                            game_state = GameState.START_MENU
+                            end_screen = None
         
         # Get hand position
         hand_x, webcam_frame = hand_tracker.get_hand_position()
@@ -647,6 +677,9 @@ def main():
                 leaderboard = load_leaderboard()
                 leaderboard.append({"name": player_name, "score": game_manager.score})
                 save_leaderboard(leaderboard)
+                
+                # Start delay timer before showing end screen
+                game_over_delay_timer = 0
                 game_state = GameState.GAME_OVER
             
             if background:
@@ -665,7 +698,21 @@ def main():
             
             player.draw(screen)
             game_manager.draw(screen)
-            game_manager.draw_game_over(screen)
+            
+            # Handle delay before showing end screen
+            current_time = pygame.time.get_ticks()
+            dt = (current_time - (getattr(main, '_last_end_time', current_time))) / 1000.0
+            main._last_end_time = current_time
+            
+            if end_screen is None:
+                game_over_delay_timer += dt
+                if game_over_delay_timer >= game_over_delay_duration:
+                    # Create end screen after delay
+                    end_screen = EndScreen(game_manager.score, player_name, sound_manager)
+            else:
+                # Update and draw end screen
+                end_screen.update(dt)
+                end_screen.draw(screen)
         
         # Draw webcam preview
         if show_webcam and webcam_frame is not None:

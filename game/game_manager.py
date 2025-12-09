@@ -393,67 +393,7 @@ class GameManager:
             pygame.draw.rect(screen, bar_color,
                            (bar_x, bar_y, progress_width, bar_height))
     
-    def draw_game_over(self, screen):
-        """Draw game over screen with styled text"""
-        from game.utils import SCREEN_WIDTH, SCREEN_HEIGHT, SCALE_FACTOR
-        
-        def draw_text_styled(text, font, center_x, center_y, color, stroke_color, stroke_width):
-            # Get text dimensions
-            text_surf = font.render(text, True, color)
-            text_rect = text_surf.get_rect(center=(center_x, center_y))
-            
-            # Shadow
-            shadow_surf = font.render(text, True, (0, 0, 0))
-            shadow_surf.set_alpha(120)
-            shadow_rect = shadow_surf.get_rect(center=(center_x + 3, center_y + 3))
-            screen.blit(shadow_surf, shadow_rect)
-            
-            # Stroke - draw relative to final position
-            for dx in range(-stroke_width, stroke_width + 1):
-                for dy in range(-stroke_width, stroke_width + 1):
-                    if dx*dx + dy*dy <= stroke_width*stroke_width:
-                        outline = font.render(text, True, stroke_color)
-                        outline_rect = outline.get_rect(center=(center_x + dx, center_y + dy))
-                        screen.blit(outline, outline_rect)
-            
-            # Main text
-            screen.blit(text_surf, text_rect)
-        
-        scale = SCALE_FACTOR
-        
-        # Semi-transparent overlay
-        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.set_alpha(200)
-        overlay.fill((0, 0, 0))
-        screen.blit(overlay, (0, 0))
-        
-        # Game Over text - red with dark stroke
-        draw_text_styled(
-            "GAME OVER", self.font_large,
-            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - int(100 * scale),
-            (255, 80, 80),  # Red
-            (100, 0, 0),  # Dark red
-            int(5 * scale)
-        )
-        
-        # Final Score - white with navy stroke
-        score_text = f"Final Score: {self.score}"
-        draw_text_styled(
-            score_text, self.font_medium,
-            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2,
-            (255, 255, 255),  # White
-            (0, 51, 102),  # Navy
-            int(3 * scale)
-        )
-        
-        # Restart instruction - green with teal stroke
-        draw_text_styled(
-            "Press R to Restart", self.font_small,
-            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + int(100 * scale),
-            (100, 255, 100),  # Green
-            (0, 150, 136),  # Teal
-            int(3 * scale)
-        )
+
     
     def reset(self):
         """Reset game state"""
