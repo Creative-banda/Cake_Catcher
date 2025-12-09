@@ -1,5 +1,13 @@
 [
   {
+    "name": "SOMENAME",
+    "score": 320
+  },
+  {
+    "name": "SOMENAME",
+    "score": 310
+  },
+  {
     "name": "AHTESHAM KHAN",
     "score": 275
   },
@@ -10,13 +18,5 @@
   {
     "name": "AHTESHAM",
     "score": 230
-  },
-  {
-    "name": "AHTESHAM KHAN",
-    "score": 230
-  },
-  {
-    "name": "AHTESHAM",
-    "score": 220
   }
 ]

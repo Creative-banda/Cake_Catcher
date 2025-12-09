@@ -151,7 +151,7 @@ class GameManager:
         
         # Update items
         for item in self.items[:]:
-            item.update()
+            item.update(dt)
             
             # Check collision with player
             if not item.caught and item.get_rect().colliderect(player.get_rect()):

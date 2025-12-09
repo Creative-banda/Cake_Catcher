@@ -6,6 +6,7 @@ from game.hand_tracker import HandTracker
 from game.player import Player
 from game.game_manager import GameManager
 from game.sound_manager import SoundManager
+from game.menu_animations import MenuAnimations
 from game import utils
 from game.utils import (
     FPS, BLACK, WHITE, GREEN, GOLD, 
@@ -56,12 +57,17 @@ class GameState:
     GAME_OVER = 4
 
 
-def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, menu_background=None):
+def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, menu_background=None, menu_animations=None):
     """Draw start menu with leaderboard and styled text"""
     if menu_background:
         screen.blit(menu_background, (0, 0))
     else:
         screen.fill(BLACK)
+    
+    # Draw falling items FIRST (background layer)
+    if menu_animations:
+        for item in menu_animations.falling_items:
+            item.draw(screen)
     
     scale = utils.SCALE_FACTOR
     
@@ -79,6 +85,11 @@ def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, 
         shadow_offset=int(4 * scale),
         shadow_alpha=90
     )
+    
+    # Draw sparkles AFTER title (foreground layer)
+    if menu_animations:
+        for sparkle in menu_animations.sparkles:
+            sparkle.draw(screen)
     
     # "TOP SCORES" label
     label_color = (255, 255, 255)
@@ -223,22 +234,33 @@ def draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, 
         hint_surf = small_font.render(hint_text, True, (255, 226, 138))  # #FFE28A light yellow
         screen.blit(hint_surf, (hint_x, last_player_y))
     
-    # Instructions - blinking
-    if blink_timer % 60 < 40:
-        instruction_color = (255, 255, 255)
-        instruction_stroke = (0, 150, 136)
-        instruction_text = "Press SPACE to Start"
-        instruction_x = utils.SCREEN_WIDTH // 2 - font_small.size(instruction_text)[0] // 2
-        instruction_y = utils.SCREEN_HEIGHT - int(120 * scale)
-        draw_text_with_effects(
-            screen, instruction_text, font_small,
-            (instruction_x, instruction_y),
-            instruction_color,
-            stroke_color=instruction_stroke,
-            stroke_width=int(3 * scale),
-            shadow_offset=int(2 * scale),
-            shadow_alpha=64
-        )
+    # Instructions - always visible with pulse animation
+    instruction_color = (255, 255, 255)
+    instruction_stroke = (0, 150, 136)
+    instruction_text = "Press SPACE to Start"
+    
+    # Get pulse scale
+    pulse_scale = menu_animations.get_pulse_scale() if menu_animations else 1.0
+    
+    # Create scaled font for pulse effect
+    base_size = int(36 * scale)
+    pulsed_size = int(base_size * pulse_scale)
+    try:
+        pulsed_font = pygame.font.Font(utils.CUSTOM_FONT, pulsed_size)
+    except:
+        pulsed_font = pygame.font.Font(None, pulsed_size)
+    
+    instruction_x = utils.SCREEN_WIDTH // 2 - pulsed_font.size(instruction_text)[0] // 2
+    instruction_y = utils.SCREEN_HEIGHT - int(120 * scale)
+    draw_text_with_effects(
+        screen, instruction_text, pulsed_font,
+        (instruction_x, instruction_y),
+        instruction_color,
+        stroke_color=instruction_stroke,
+        stroke_width=int(3 * scale),
+        shadow_offset=int(2 * scale),
+        shadow_alpha=64
+    )
 
 
 def draw_name_entry_screen(screen, font_large, font_medium, font_small, name_input, blink_timer):
@@ -453,12 +475,13 @@ def main():
     # Initialize components
     hand_tracker = HandTracker()
     sound_manager = SoundManager()
+    menu_animations = MenuAnimations(SCREEN_WIDTH, SCREEN_HEIGHT)
     player = None
     game_manager = None
     
     # Load backgrounds
     try:
-        background = pygame.image.load('assets/images/background_party.png').convert()
+        background = pygame.image.load('assets/images/background_party_2.png').convert()
         background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
     except:
         background = None
@@ -553,7 +576,12 @@ def main():
         # State logic
         if game_state == GameState.START_MENU:
             blink_timer += 1
-            draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, menu_background)
+            # Update menu animations
+            current_time = pygame.time.get_ticks()
+            dt = (current_time - (getattr(main, '_last_menu_time', current_time))) / 1000.0
+            main._last_menu_time = current_time
+            menu_animations.update(dt)
+            draw_start_screen(screen, font_large, font_medium, font_small, blink_timer, menu_background, menu_animations)
         
         elif game_state == GameState.NAME_ENTRY:
             blink_timer += 1

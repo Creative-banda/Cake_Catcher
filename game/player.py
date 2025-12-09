@@ -28,7 +28,7 @@ class Player:
             aspect_ratio = original_width / original_height
             
             new_width = target_width
-            new_height = int(target_width / aspect_ratio)
+            new_height = int(target_width / aspect_ratio) * 1.2
             
             self.image = pygame.transform.smoothscale(self.image, (new_width, new_height))
             self.width = new_width
